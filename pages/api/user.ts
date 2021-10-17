@@ -1,22 +1,21 @@
 import type {NextApiRequest, NextApiResponse} from 'next';
-import {Login} from '../../types/Login';
-import {DefaultResponseMsg} from '../../types/DefaultResponseMsg';
 import md5 from 'md5';
-import { User} from '../../types/User';
+import {DefaultResponseMsg} from '../../types/DefaultResponseMsg';
+import { User } from '../../types/User';
 import connectDB from '../../middlewares/connectDB';
 import {UserModel} from '../../models/UserModel';
 
  const handler = async(req: NextApiRequest, res : NextApiResponse<DefaultResponseMsg>) => {
     try{
         if(req.method !== 'POST'){
-            res.status(400).json({ error: 'Metodo solicitado não existe '});
+            res.status(400).json({ error: 'Método solicitado não existe '});
             return;
         }
 
         if(req.body){
             const user = req.body as User;
             if(!user.name || user.name.length < 3){
-                res.status(400).json({ error: 'Nome do usuario invalido '});
+                res.status(400).json({ error: 'Nome do usuario inválido '});
             return;
             }
 
@@ -26,32 +25,32 @@ import {UserModel} from '../../models/UserModel';
             return;
             } 
 
-            const existingUser = await UserModel.find({ email: user.email });
-            if(existingUser && existingUser.length > 0) {
-            res.status(400).json({ error: 'Usuário já existe'})
-            return;
-            }
-
             var mediumRegex = new RegExp("^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})");
             if(!mediumRegex.test(user.password)){
             res.status(400).json({ error: 'Senha do usuário inválida '});
             return;
             }
 
+            const existingUser = await UserModel.find({ email: user.email });
+            if(existingUser && existingUser.length > 0) {
+            res.status(400).json({ error: 'Usuário já existe'})
+            return;
+            }
+
             const final = {
                 ...user,
                 password: md5(user.password)
-              } as User;
+              }
 
             await UserModel.create(user);
-            res.status(200).json({msg: 'Usuario criado com sucesso'});
+            res.status(200).json({msg: 'Usuário criado com sucesso'});
             return;
         }       
 
-        res.status(400).json({error: 'Parametros de entrada invalido'}); 
+        res.status(400).json({error: 'Parâmetros de entrada inválido'}); 
     }catch(e){
-        console.log('Erro ao criar usuario: ', e);
-        res.status(500).json({ error: 'Erro ao criar usuario, tente novamente '});
+        console.log('Erro ao criar usuário: ', e);
+        res.status(500).json({ error: 'Erro ao criar usuário, tente novamente '});
     }
 }
 

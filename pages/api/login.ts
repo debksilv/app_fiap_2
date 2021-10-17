@@ -1,25 +1,43 @@
-import type {NextApiRequest, NextApiResponse} from "next"
-import { Login } from "../../types/Login";
-import { DefaultResponseMsg } from "../../types/DefaultResponseMsg";
+import type {NextApiRequest, NextApiResponse} from 'next';
+import md5 from 'md5';
+import jwt from 'jsonwebtoken';
+import connectDB from '../../middlewares/connectDB';
+import {UserModel} from '../../models/UserModel';
+import { DefaultResponseMsg } from '../../types/DefaultResponseMsg';
+import  { Login } from '../../types/Login';
+import  { LoginResponse } from '../../types/LoginResponse';
 
-export default function handler (req : NextApiRequest, res : NextApiResponse) {
+const handler = async (req : NextApiRequest, res : NextApiResponse<DefaultResponseMsg | LoginResponse>) => {
     try{
         if(req.method !== 'POST'){
-            res.status(400).json({ error: 'Metodo solicitado nao existe '});
+            res.status(400).json({ error: 'Método solicitado não existe '});
             return;
         }
 
-        const body = req.body as Login;
-        if(body.login && body.password
-           && body.login === 'admin@admin.com'
-           && body.password === 'Admin@123'){
-           res.status(200).json({msg : 'Login efetuado com sucesso'})
-           return;
+        const {MY_SECRET_KEY} = process.env;
+        if(!MY_SECRET_KEY){
+            res.status(500).json({ error: 'ENV my secret key não encontrada '});
+            return; 
         }
 
-        res.status(400).json({ error: 'Usuario ou senha inválido '});
-    }catch(e){
-        console.log('Erro ao autenticar usuario: ', e);
-        res.status(500).json({ error: 'Erro ao autenticar usuario, tente novamente '});
-    }
-}   
+        if(req.body){
+            const auth  = req.body as Login;
+            if(auth.login && auth.password){   
+                const usersFound = await UserModel.find({email : auth.login, password: md5(auth.password)})
+                if(usersFound && usersFound.length > 0){
+                    const user = usersFound[0];
+                    const token = jwt.sign({_id : user._id}, MY_SECRET_KEY);
+                    return res.status(200).json({ token, name: user.name, email: user.email});
+                }
+            }
+        }
+        
+        res.status(400).json({ error: 'Usuário ou senha inválidos' });
+  } catch(e) {
+    const errorMsg = 'Erro ao autenticar usuário';
+
+    console.log(`${errorMsg}: `, e);
+    res.status(500).json({ error: `${errorMsg}, tente novamente!` });
+  }
+}
+export default connectDB(handler);  
