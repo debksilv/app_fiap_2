@@ -9,14 +9,21 @@ import { GetTasksQueryParams } from '../../types/GetTasksQueryParams';
 
 const handler = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg | Task[]>) =>{
     try{
+
+        const userId = req?.body?.userId ? req?.body?.userId : req?.query?.userId as string;
+        const failedtValidation = await validateUser(userId);
+        if(failedtValidation){
+            return res.status(400).json({ error: failedtValidation});
+        }
+
         if(req.method ==='POST'){
-            return await saveTask(req, res);
+            return await saveTask(req, res, userId);
         }else if(req.method ==='GET'){
-            return await getTask(req, res);
+            return await getTask(req, res, userId);
         }else if(req.method ==='PUT'){
-            return;
+            return await updateTask(req, res, userId);
         }else if(req.method ==='DELETE'){
-            return;
+            return await deleteTask(req, res, userId);
     }
 
         res.status(400).json({ error: 'Método solicitado não existe '});
@@ -26,13 +33,61 @@ const handler = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseM
     }
 }
 
-const getTask = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg | Task[]>) =>{
-    const userId = req?.body?.userId ? req?.body?.userId : req?.query?.userId as string;
-    const failedtValidation = await validateUser(userId);
-    if(failedtValidation){
-        return res.status(400).json({ error: failedtValidation});
+const validateTaskAndReturnValue = async (req:NextApiRequest, userId : string) => {
+    const id = req.query?.id as string;
+
+    if(!id || id.trim() ===''){
+        return null;
+}
+
+    const taskFound = await TaskModel.findById(id);
+    if(!taskFound || taskFound.userId !== userId){
+        return null;
     }
 
+    return taskFound;
+}
+
+const updateTask = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg | Task[]>, userId: string) =>{
+    const taskFound = await validateTaskAndReturnValue(req, userId);
+    if(!taskFound){
+        return res.status(400).json({ error: 'Tarefa não não encontrada'});  
+    }
+
+    if(req.body){
+        const task = req.body as Task;
+
+        if(task.name && task.name.trim() !==''){
+            taskFound.name = task.name;
+        }
+    
+        if(task.finishPrevisionDate) {
+            taskFound.finishPrevisionDate = task.finishPrevisionDate;
+        }
+
+        if(task.finishDate) {
+            taskFound.finishDate = task.finishDate;
+        }
+
+        await TaskModel.findByIdAndDelete({_id : taskFound._id});
+        return res.status(200).json({ msg: 'Tarefa deletada com sucesso'});
+    }
+
+    return res.status(400).json({ error: 'Parâmetros de entrada inválidos'});
+}
+
+const deleteTask = async (req:NextApiRequest, res:NextApiResponse<DefaultResponseMsg | Task[]>, userId : string) =>{
+    const taskFound = await validateTaskAndReturnValue(req, userId);
+    if(!taskFound){
+        return res.status(400).json({ error: 'Tarefa nãoo encontrada'});
+    }
+
+    await TaskModel.findByIdAndDelete({ _id : taskFound._id});
+    return res.status(200).json({ msg: 'Tarefa deletada com sucesso'});
+}
+
+const getTask = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg | Task[]>, userId: string) =>{
+    
     const params = req.query as GetTasksQueryParams;
 
     const query = {
@@ -85,16 +140,9 @@ const validateUser = async (userId: string) =>{
         }
 }   
 
-const saveTask = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg>) =>{
+const saveTask = async(req:NextApiRequest, res : NextApiResponse<DefaultResponseMsg>, userId: string) =>{
     if(req.body){
-        const userId = req.body.userId;
-        const failedtValidation = await validateUser(userId);
-        if(failedtValidation){
-            return res.status(400).json({ error: failedtValidation});
-        }
-
         const task = req.body as Task;
-
         if(!task.name || task.name.length <2){
             return res.status(400).json({ error: 'Nome da tarefa inválida '});
         }
