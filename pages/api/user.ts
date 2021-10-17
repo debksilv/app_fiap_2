@@ -31,7 +31,7 @@ import {UserModel} from '../../models/UserModel';
             return;
             }
 
-            const existingUser = await UserModel.find({ email: user.email });
+            const existingUser = await UserModel.find({ email : user.email });
             if(existingUser && existingUser.length > 0) {
             res.status(400).json({ error: 'Usuário já existe'})
             return;
