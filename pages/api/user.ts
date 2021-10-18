@@ -42,7 +42,7 @@ import {UserModel} from '../../models/UserModel';
                 password: md5(user.password)
               }
 
-            await UserModel.create(user);
+            await UserModel.create(final);
             res.status(200).json({msg: 'Usuário criado com sucesso'});
             return;
         }       
