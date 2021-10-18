@@ -1,52 +1,25 @@
 import type { NextPage } from 'next'
-import { useState } from 'react'
+import { useEffect, useState } from 'react';
+import { Home } from '../containers/Home';
+import { Login} from '../containers/Login';
 
-const Home: NextPage = () => {
+const Index: NextPage = () => {
 
-  const [login, setLogin] = useState('teste');
-  const [password, setPassword] = useState('');
-  const [msgErro, setMsgErro] = useState('');
-  const [isLoading, setLoading] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
 
-  const doLogin = async(e : any) =>{
-    try{
-      setLoading(true);
-      e.preventDefault();
-      setMsgErro('')
-
-      if(!login || !password){
-        setMsgErro('Parâmetros de entrada inválidos');
-        setTimeout(() => {
-        setLoading(false)
-        }, 2000)
-        return;
+  useEffect(() => {
+    if(typeof window !== "undefined"){
+      const token = localStorage.getItem('accessToken')
+      if(token){
+        setAccessToken(token);
       }
-    }catch(e){
-      console.log(e);
     }
-
-    setLoading(false);
-}
+  })
 
   return (
-    <div className="container-login">
-      <img src="/logo.svg" alt="Logo Fiap" className="logo"/>
-      <form>
-        {msgErro && <p>{msgErro}</p>}
-        <div className="input">
-          <img src="/mail.svg" alt="Logo Fiap"/>
-          <input type="text" placeholder="example@example.com" 
-           value={login} onChange={e => setLogin(e.target.value)} />
-        </div>
-        <div className="input">
-          <img src="/lock.svg" alt="Logo Fiap"/>
-          <input type="password" placeholder="Informe sua senha" 
-          value={password} onChange={e => setPassword(e.target.value)}/>
-        </div>
-        <button className={isLoading ? "disabled" : ""} type="button" onClick={doLogin} disabled={isLoading}>{isLoading ? "...Carregando" : "Login"}</button>
-      </form>
-    </div>
+    !accessToken ? <Login setAccessToken={setAccessToken} /> 
+        : <Home  setAccessToken={setAccessToken}/>
   )
 }
 
-export default Home
+export default Index
