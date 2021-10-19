@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Links Úteis
+https://www.figma.com/file/knytjAN1Sb4DYxtMLNv8xw/FIAP?node-id=1%3A78;
+
+http://dontpad.com/78AOJ-ux-engineer;
+
+http://dontpad.com/78AOJ-ux-engineer-aula03;
+
+http://dontpad.com/78AOJ-ux-engineer-aula03-front.
+
+
 ## Getting Started
 
 First, run the development server:
